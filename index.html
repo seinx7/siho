@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국공장 1위였던 내가 지금은 100위 노잼 시호</title>
+    <style>
+        /* Modern Indie Style CSS Variables */
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --text-light: #f8fafc;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --locked: #64748b;
+            --joker: #a855f7;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Responsive Container */
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Buttons Redesign */
+        .btn {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .btn-secondary { background: linear-gradient(135deg, var(--secondary), #d97706); color: white; }
+        .btn-danger { background: linear-gradient(135deg, var(--danger), #b91c1c); color: white; }
+        .btn-ghost { background: transparent; border: 1px solid var(--text-dim); color: var(--text-dim); }
+
+        /* Start Screen */
+        #start-screen {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        .game-logo {
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .game-logo h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(to bottom, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            word-break: keep-all;
+            padding: 0 10px;
+        }
+
+        .game-logo p {
+            color: var(--secondary);
+            font-weight: 800;
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .version-tag {
+            position: absolute;
+            bottom: 20px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        /* Boss Select Redesign */
+        #boss-select-screen {
+            background-color: var(--bg-dark);
+            overflow-y: auto;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .stat-label { font-size: 0.7rem; color: var(--text-dim); display: block; }
+        .stat-value { font-weight: 700; font-size: 1.1rem; }
+
+        .boss-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding-bottom: 40px;
+        }
+
+        .boss-card {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .boss-card.locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        .boss-card.unlocked:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .boss-card.defeated { border-color: var(--success); }
+        
+        .boss-card .badge {
+            position: absolute;
+            top: -8px; right: -8px;
+            background: var(--success);
+            padding: 4px 8px; border-radius: 8px;
+            font-size: 0.7rem; font-weight: 800;
+        }
+
+        /* Battle UI */
+        .entity-info {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .hp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .hp-bar-outer {
+            width: 100%; height: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px; overflow: hidden;
+        }
+
+        .hp-bar-inner {
+            height: 100%; width: 100%;
+            background: linear-gradient(90deg, var(--success), #34d399);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hp-bar-inner.danger { background: linear-gradient(90deg, var(--danger), #f87171); }
+
+        /* Dice Style */
+        #dice-area {
+            flex-grow: 1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .die-card {
+            width: 70px; height: 90px;
+            background: #fff;
+            color: #1e293b;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .die-card.locked { background: var(--locked); color: white; transform: translateY(4px); box-shadow: none; }
+        .die-card.perm-locked { background: #334155; color: rgba(255,255,255,0.3); cursor: not-allowed; }
+        .die-card.joker { background: #faf5ff; border: 3px dashed var(--joker); color: var(--joker); }
+        .die-card.rolling { animation: dieRoll 0.1s infinite; }
+
+        .lock-badge {
+            position: absolute;
+            bottom: -5px; right: -5px;
+            background: var(--danger);
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 0.7rem; border: 2px solid var(--panel-bg);
+        }
+
+        /* Combat Log */
+        #log-container {
+            height: 120px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 12px;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .log-entry { margin-bottom: 4px; padding: 2px 8px; border-radius: 4px; animation: slideIn 0.3s ease-out; }
+        .log-entry.player { color: #a5b4fc; }
+        .log-entry.boss { color: #fca5a5; }
+        .log-entry.system { color: var(--secondary); font-weight: 700; background: rgba(245,158,11,0.1); }
+        .log-entry.new { background: rgba(255,255,255,0.1); }
+
+        /* Overlays */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .modal-content {
+            background: var(--panel-bg);
+            border-radius: 24px;
+            padding: 40px 24px;
+            width: 100%; max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Special Visuals */
+        .floating-damage {
+            position: fixed;
+            color: var(--danger);
+            font-weight: 900;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 2000;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            animation: damageFloat 0.8s ease-out forwards;
+        }
+
+        #hand-banner {
+            position: fixed;
+            top: 40%; left: 0; width: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99,102,241,0.9), transparent);
+            color: white;
+            font-size: 3rem; font-weight: 900;
+            text-align: center; padding: 20px 0;
+            display: none; z-index: 1500;
+            animation: bannerSlide 1s ease-in-out;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes dieRoll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(5deg) scale(1.1); } 100% { transform: rotate(-5deg) scale(1); } }
+        @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes damageFloat { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
+        @keyframes bannerSlide { 0% { transform: scaleX(0); opacity: 0; } 20%, 80% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(0); opacity: 0; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+        .shake { animation: shake 0.2s 3; }
+
+        /* 🟢 Passive Selection & Viewer (New) */
+        .passive-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .passive-card:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .passive-card.common { border-left: 6px solid #94a3b8; }
+        .passive-card.rare { border-left: 6px solid #34d399; }
+        .passive-card.legendary { border-left: 6px solid #f59e0b; }
+        .passive-card.mythic { border-left: 6px solid #a855f7; background: linear-gradient(90deg, rgba(168, 85, 247, 0.1), transparent); }
+
+        .rarity-tag {
+            font-size: 0.65rem;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .rarity-tag.common { background: #64748b; color: white; }
+        .rarity-tag.rare { background: #059669; color: white; }
+        .rarity-tag.legendary { background: #d97706; color: white; }
+        .rarity-tag.mythic { background: #7e22ce; color: white; animation: pulse 1s infinite; }
+
+        .skill-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            font-size: 3.5rem;
+            font-weight: 900;
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 6px;
+            animation: skillAppear 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            text-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        @keyframes skillAppear {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            25% { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        .skill-popup.player { color: #fff; text-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary); }
+        .skill-popup.boss { color: #fff; text-shadow: 0 0 20px var(--danger), 0 0 40px var(--danger); }
+        .skill-popup.hard { color: #fff; text-shadow: 0 0 20px var(--joker), 0 0 40px var(--joker); animation: skillAppear 1.2s forwards, glitch 0.3s infinite; }
+
+        .skill-yansik { color: #fff; text-shadow: 0 0 20px #7f1d1d, 0 0 40px #000; }
+        .skill-matja { color: #fff; text-shadow: 0 0 20px #d97706, 0 0 40px #78350f; }
+        .skill-nysuk { color: #fff; text-shadow: 0 0 20px #7e22ce, 0 0 40px #fff; }
+        .skill-onsuk { color: #fff; text-shadow: 0 0 20px #2563eb, 0 0 40px #64748b; }
+        .skill-chosuk { color: #fff; text-shadow: 0 0 20px #475569, 0 0 40px #f8fafc; }
+        .skill-kkotsuk { color: #fff; text-shadow: 0 0 20px #db2777, 0 0 40px #f472b6; }
+
+        .effect-vignette { background: radial-gradient(circle, transparent 50%, rgba(127, 29, 29, 0.4) 100%); animation: pulse 0.5s infinite; }
+        .effect-flash-multi { animation: multiFlash 1s steps(5); }
+        .effect-freeze { background: rgba(255,255,255,0.2); backdrop-filter: grayscale(1); }
+        .effect-pulse-shield { background: radial-gradient(circle, transparent 60%, rgba(37, 99, 235, 0.2) 100%); animation: shieldPulse 1.2s infinite; }
+        .effect-metallic { background: linear-gradient(45deg, transparent, rgba(248, 250, 252, 0.1), transparent); animation: metalSweep 0.5s; }
+        .effect-wobble { animation: wobble 0.5s infinite, blurPulse 1.2s infinite; }
+
+        @keyframes multiFlash { 0%, 100% { background: transparent; } 50% { background: rgba(217, 119, 6, 0.2); } }
+        @keyframes shieldPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+        @keyframes metalSweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+        @keyframes wobble { 0% { transform: rotate(0deg); } 25% { transform: rotate(1deg) scale(1.02); } 75% { transform: rotate(-1deg) scale(0.98); } }
+        @keyframes blurPulse { 0%, 100% { filter: blur(0px); } 50% { filter: blur(4px); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+        @keyframes glitch {
+            0% { clip-path: inset(10% 0 30% 0); transform: translate(-50%, -50%) skew(2deg); }
+            20% { clip-path: inset(40% 0 10% 0); transform: translate(-52%, -48%) skew(-2deg); }
+            40% { clip-path: inset(15% 0 50% 0); transform: translate(-48%, -52%) skew(5deg); }
+            60% { clip-path: inset(80% 0 5% 0); transform: translate(-51%, -49%) skew(-3deg); }
+            80% { clip-path: inset(30% 0 20% 0); transform: translate(-49%, -51%) skew(1deg); }
+            100% { clip-path: inset(10% 0 30% 0); transform: translate(-50%, -50%) skew(-2deg); }
+        }
+
+        @media (max-width: 400px) {
+            .game-logo h1 { font-size: 2.2rem; }
+            .die-card { width: 60px; height: 80px; font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="screen-effect-layer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9000; transition: all 0.5s ease;"></div>
+    
+    <!-- Sound Toggle Button -->
+    <button id="sound-toggle" style="position: fixed; top: 15px; right: 15px; z-index: 10001; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 50px; font-size: 0.8rem; cursor: pointer; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onclick="toggleSound()">
+        <span id="sound-icon">🔊</span> <span id="sound-text">Sound ON</span>
+    </button>
+
+    <div id="hand-banner">야추!</div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <div class="game-logo">
+            <h1>국공장 1위였던 내가<br>지금은 100위 노잼 시호</h1>
+            <p>Boss Rush Edition</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 15px; width: 80%;">
+            <button class="btn btn-primary" onclick="loadAndSelect()">게임 시작</button>
+            <button class="btn btn-secondary" onclick="showGameGuide()">게임 설명</button>
+            <button class="btn btn-ghost" style="border-color: var(--primary); color: var(--primary);" onclick="soundTest()">사운드 테스트</button>
+            <button class="btn btn-danger" style="margin-top: 20px; font-size: 0.8rem; padding: 8px;" onclick="confirmReset()">진행도 초기화</button>
+        </div>
+        <div class="version-tag">v1.3 - Surrender & Bug Fixes</div>
+    </div>
+
+    <!-- Game Guide Overlay -->
+    <div id="guide-overlay" class="overlay">
+        <div class="modal-content" style="text-align: left; max-width: 450px;">
+            <h2 style="color: var(--primary); margin-bottom: 20px; text-align: center;">게임 설명</h2>
+            <div style="font-size: 0.85rem; line-height: 1.8; max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                <p style="font-weight: 800; color: var(--secondary); margin-bottom: 10px;">국공장 1위였던 내가 지금은 100위 노잼 시호</p>
+                <ul style="padding-left: 20px; margin-bottom: 20px;">
+                    <li>주사위를 굴려 높은 족보를 만드는 주사위 포커 게임입니다.</li>
+                    <li>족보가 높을수록 더 강한 피해를 입힙니다.</li>
+                    <li>재굴림을 이용해 원하는 족보를 노릴 수 있습니다.</li>
+                    <li>각 보스는 고유한 스킬을 가지고 있습니다.</li>
+                    <li>보스를 처치하면 SP를 획득합니다.</li>
+                    <li>획득한 SP로 공격력, 방어력, 체력을 강화할 수 있습니다.</li>
+                    <li>같은 족보를 연속으로 만들면 콤보가 발생하여 피해량이 증가합니다.</li>
+                </ul>
+                <p style="font-weight: 800; color: var(--danger); margin-bottom: 10px;">특별 시스템</p>
+                <ul style="padding-left: 20px;">
+                    <li>꽃숙을 처치하면 히든 보스가 등장합니다.</li>
+                    <li>히든 보스를 처치하면 <strong>하드모드</strong>가 해금됩니다.</li>
+                    <li>하드 모드에서는 보스들의 스킬이 더욱 강력해지며 피해를 입을 때마다 스트레스를 얻습니다.</li>
+                    <li>스트레스가 100이 되면 각성 또는 좌절 상태가 발생합니다.</li>
+                    <li>하드 모드에서는 보스를 다시 처치 할 경우 3번까지 SP를 추가로 획득할 수 있습니다.</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="closeGameGuide()">닫기</button>
+        </div>
+    </div>
+
+    <!-- Boss Selection Screen -->
+    <div id="boss-select-screen" class="screen">
+        <div class="hp-header">
+            <h2 style="font-size: 1.5rem;">전장 선택</h2>
+            <div id="hard-mode-toggle-container" style="display: none;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 800; color: var(--danger);">
+                    HARD <input type="checkbox" id="hard-mode-checkbox" onchange="toggleHardMode()">
+                </label>
+            </div>
+            <button class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.8rem;" onclick="showScreen('start-screen')">뒤로</button>
+        </div>
+        
+        <div class="stat-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 800; color: var(--secondary);">호숙의 성장</span>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">Available SP: <span id="stat-sp" style="color: white;">0</span></span>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-item" onclick="upgradeStat('attack')">
+                    <span class="stat-label">ATTACK</span>
+                    <span class="stat-value" id="stat-atk">0</span>
+                </div>
+                <div class="stat-item" onclick="upgradeStat('defense')">
+                    <span class="stat-label">DEFENSE</span>
+                    <span class="stat-value" id="stat-def">0</span>
+                </div>
+                <div class="stat-item" onclick="upgradeStat('hpLevel')">
+                    <span class="stat-label">HP LEVEL</span>
+                    <span class="stat-value" id="stat-hp">0</span>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.7rem; color: var(--text-dim);">
+                누적 SP: <span id="stat-total-sp">0</span> | 체력 <span id="stat-hp-val">100</span>
+            </div>
+            <button class="btn btn-ghost" style="width: 100%; margin-top: 15px; font-size: 0.8rem; padding: 8px;" onclick="resetStats()">스탯 재분배</button>
+        </div>
+        <div class="boss-grid" id="boss-grid"></div>
+    </div>
+
+    <!-- Battle Screen -->
+    <div id="battle-screen" class="screen">
+        <div class="entity-info" id="boss-panel">
+            <div class="hp-header">
+                <span id="boss-name" style="color: var(--danger);">보스 이름</span>
+                <span id="boss-skill-display" style="font-size: 0.7rem; background: var(--danger); padding: 2px 8px; border-radius: 4px;">스킬</span>
+            </div>
+            <div class="hp-bar-outer">
+                <div id="boss-hp-fill" class="hp-bar-inner"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-top: 4px; color: var(--text-dim);">
+                <span id="stage-info">Stage 1/6</span>
+                <span id="boss-hp-text">0 / 0</span>
+            </div>
+        </div>
+        <div id="dice-area"></div>
+        <div style="text-align: center; margin: 10px 0; font-weight: 800; letter-spacing: 2px; color: var(--text-dim);" id="reroll-text">REROLL 2 Left</div>
+        <div class="entity-info" id="player-panel">
+            <div class="hp-header">
+                <span>호숙</span>
+                <span style="font-size: 0.8rem; color: var(--success);">LV. <span id="player-lv-sum">0</span></span>
+            </div>
+            <div class="hp-bar-outer">
+                <div id="player-hp-fill" class="hp-bar-inner"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-top: 4px; color: var(--text-dim);">
+                <span>HOSUK</span>
+                <span id="player-hp-text">100 / 100</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button id="btn-reroll" class="btn btn-secondary" style="flex: 1;" onclick="playerReroll()">재굴림</button>
+            <button id="btn-skill" class="btn btn-ghost" style="flex: 1; border-color: var(--secondary); color: var(--secondary);" onclick="useSkill()">낫씨다이스</button>
+            <button id="btn-passive" class="btn btn-ghost" style="flex: 1; border-color: var(--primary); color: var(--primary);" onclick="showCurrentPassive()">패시브</button>
+            <button id="btn-surrender" class="btn btn-ghost" style="flex: 0.8; border-color: var(--danger); color: var(--danger);" onclick="confirmSurrender()">항복</button>
+            <button id="btn-attack" class="btn btn-primary" style="flex: 1.5;" onclick="playerAttack()">공격!!</button>
+        </div>
+        <div id="log-container"></div>
+    </div>
+
+    <!-- Surrender Confirmation Overlay -->
+    <div id="surrender-overlay" class="overlay">
+        <div class="modal-content" style="border-color: var(--danger);">
+            <h2 style="color: var(--danger); margin-bottom: 15px;">항복 확인</h2>
+            <p style="margin-bottom: 25px; color: var(--text-dim);">정말 항복하시겠습니까?<br>진행 상황이 저장되지 않습니다.</p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-danger" style="flex: 1;" onclick="surrender()">예</button>
+                <button class="btn btn-ghost" style="flex: 1;" onclick="closeSurrender()">아니오</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Passive Selection Overlay -->
+    <div id="passive-select-overlay" class="overlay">
+        <div class="modal-content" style="max-width: 450px; padding: 30px 20px;">
+            <h2 style="color: var(--primary); margin-bottom: 10px;">패시브 선택</h2>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 20px;">이번 전투에 적용할 능력을 하나 선택하세요.</p>
+            <div id="passive-choices-container"></div>
+        </div>
+    </div>
+
+    <!-- Passive Info Overlay -->
+    <div id="passive-info-overlay" class="overlay">
+        <div class="modal-content" style="border-color: var(--primary);">
+            <h2 id="current-passive-name" style="color: var(--primary); margin-bottom: 10px;">패시브 이름</h2>
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left;">
+                <span id="current-passive-rarity" class="rarity-tag common">등급</span>
+                <p id="current-passive-desc" style="line-height: 1.6; font-size: 0.95rem; margin-top: 10px;">패시브 설명</p>
+            </div>
+            <button class="btn btn-ghost" style="width: 100%;" onclick="closePassiveInfo()">닫기</button>
+        </div>
+    </div>
+
+    <!-- Boss Intro Modal -->
+    <div id="modal-overlay" class="overlay">
+        <div class="modal-content">
+            <div id="modal-stage-num" style="color: var(--danger); font-weight: 800; letter-spacing: 4px; margin-bottom: 10px;">STAGE 1</div>
+            <h2 id="modal-boss-name" style="font-size: 2.2rem; margin-bottom: 15px;">보스 이름</h2>
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <div id="modal-skill-container" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span id="modal-boss-skill-name" style="color: var(--secondary); font-weight: 700;">스킬</span>
+                    <button class="btn btn-ghost" style="font-size: 0.6rem; padding: 3px 10px; border-color: var(--secondary); color: var(--secondary);" onclick="showSkillInfo(gameState.currentBossIndex)">스킬 보기</button>
+                </div>
+                <p id="modal-boss-quote" style="font-style: italic; font-size: 0.9rem; color: var(--text-dim);">"대사"</p>
+            </div>
+            <button class="btn btn-primary btn-large" style="width: 100%;" onclick="closeBossModal()">전투 개시</button>
+        </div>
+    </div>
+
+    <div id="victory-overlay" class="overlay">
+        <div class="modal-content" style="border-color: var(--success);">
+            <h1 style="color: var(--success); font-size: 3rem;">승리!</h1>
+            <p id="victory-msg" style="margin-bottom: 20px;"></p>
+            <div id="victory-stats" style="margin-bottom: 30px; font-size: 0.9rem; color: var(--text-dim);"></div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" onclick="showBossSelect()">보스 선택으로</button>
+                <button class="btn btn-ghost" onclick="retryBoss()">다시 싸우기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="defeat-overlay" class="overlay">
+        <div class="modal-content" style="border-color: var(--danger);">
+            <h1 style="color: var(--danger); font-size: 2.5rem;">호숙이 쓰러졌다!</h1>
+            <p style="margin-bottom: 30px; color: var(--text-dim);">아직 포기하기엔 이릅니다.</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-danger" onclick="retryBoss()">다시 도전</button>
+                <button class="btn btn-ghost" onclick="showBossSelect()">보스 선택으로</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="skill-info-overlay" class="overlay">
+        <div class="modal-content" style="border-color: var(--secondary);">
+            <h2 id="skill-info-title" style="color: var(--secondary); margin-bottom: 10px;">스킬 이름</h2>
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left;">
+                <p id="skill-info-desc" style="line-height: 1.6; font-size: 0.95rem;">스킬 설명</p>
+                <div id="skill-info-hard" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                    <span style="color: var(--danger); font-weight: 800; font-size: 0.8rem;">[HARD MODE]</span>
+                    <p id="skill-info-hard-desc" style="color: #fca5a5; font-size: 0.9rem; margin-top: 5px;"></p>
+                </div>
+            </div>
+            <button class="btn btn-ghost" style="width: 100%;" onclick="closeSkillInfo()">닫기</button>
+        </div>
+    </div>
+
+    <div id="true-end-overlay" class="overlay" style="background: black;">
+        <div class="modal-content" style="background: transparent; border: none; box-shadow: none; max-width: 100%;">
+            <h1 style="color: #f1c40f; font-size: 4rem; text-shadow: 0 0 30px #f1c40f;">TRUE END</h1>
+            <p style="letter-spacing: 10px; margin-bottom: 50px;">모든 정병을 제패한 자</p>
+            <button class="btn btn-secondary" onclick="showBossSelect()">보스 선택으로 (Replay)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * AudioManager
+ */
+const AudioManager = {
+    isMuted: localStorage.getItem('hosuk_muted') === 'true',
+    sounds: {
+        dice: new Audio('dice.mp3'),
+        skill: new Audio('skill.mp3'),
+        combo: new Audio('combo.mp3'),
+        attack: new Audio('attack.mp3'),
+        click: new Audio('click.mp3')
+    },
+    
+    init() {
+        console.log("--- Initializing Audio ---");
+        for (const [key, audio] of Object.entries(this.sounds)) {
+            try {
+                const fileName = audio.src.split('/').pop() || `${key}.mp3`;
+                audio.load();
+                console.log("Audio loaded:", fileName);
+            } catch (e) {
+                console.warn(`Failed to init audio ${key}:`, e);
+            }
+        }
+        this.updateUI();
+    },
+
+    play(key, restart = true) {
+        if (this.isMuted) return Promise.resolve();
+        const s = this.sounds[key];
+        if (!s) return Promise.resolve();
+        
+        // Priority Handling
+        if (key === 'skill') {
+            this.sounds.attack.pause();
+            this.sounds.combo.pause();
+        } else if (key === 'combo') {
+            this.sounds.attack.pause();
+        } else if (key === 'attack') {
+            if (!this.sounds.combo.paused) return Promise.resolve();
+        }
+
+        if (restart) s.currentTime = 0;
+        return s.play().catch(e => {
+            console.warn(`Sound play suppressed (${key}):`, e.message);
+        });
+    },
+
+    toggle() {
+        this.isMuted = !this.isMuted;
+        localStorage.setItem('hosuk_muted', this.isMuted);
+        this.updateUI();
+    },
+
+    updateUI() {
+        const icon = document.getElementById('sound-icon');
+        const text = document.getElementById('sound-text');
+        if (icon) icon.innerText = this.isMuted ? '🔇' : '🔊';
+        if (text) text.innerText = this.isMuted ? 'Sound OFF' : 'Sound ON';
+    }
+};
+
+async function soundTest() {
+    console.log("--- Starting Sound Test ---");
+    try {
+        await AudioManager.play('click');
+        console.log("Success: click.mp3 played");
+        await sleep(500);
+        await AudioManager.play('dice');
+        console.log("Success: dice.mp3 played");
+        alert("사운드 테스트 완료! 콘솔을 확인하세요.");
+    } catch (err) {
+        console.error("Failure: Sound test error", err);
+    }
+}
+
+function toggleSound() { AudioManager.toggle(); }
+
+const CONFIG = {
+    PLAYER_MAX_HP: 100, MAX_REROLLS: 2, MAX_LOGS: 20, SAVE_KEY: "hosuk_dice_rpg_save_v10",
+    DAMAGE_TABLE: { "야추": 50, "포카드": 35, "풀하우스": 25, "스트레이트": 20, "트리플": 15, "투페어": 10, "원페어": 5, "없음": 0 },
+    DICE_FACES: ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"]
+};
+
+const BOSS_DATA = [
+    { name: "얀식", hp: 80, def: 0, intro: "키스..해줄거지?헥헥", skill: "목줄", skillDesc: "주사위 슬롯 하나 영구 봉인" },
+    { name: "맛자", hp: 120, def: 2, intro: "어딜 노예가 대들어?", skill: "노예", skillDesc: "주사위 6개 사용 / 재굴림 1회" },
+    { name: "늬숙", hp: 160, def: 0, intro: "응? 나 그림 그리고 있었어.", skill: "흑염룡", skillDesc: "주사위 합 16일 때 즉사" },
+    { name: "온숙", hp: 220, def: 5, intro: "시호야, 난 시호 지킴이 잖아.", skill: "수학 마스터", skillDesc: "재굴림 기회 3회로 증가" },
+    { name: "쵸숙", hp: 320, def: 0, intro: "나 잖아.", skill: "자신감", skillDesc: "첫 주사위가 조커(?)가 됨" },
+    { name: "꽃숙", hp: 450, def: 10, intro: "그래서, 내가 싫어? 아니잖아.", skill: "만취 / 도자기", skillDesc: "30% 추가 턴 / 1회 부활", passive: "도자기" },
+    { name: "춘식", hp: 777, def: 15, intro: "안녕? 내가 진짜 마지막이야.", skill: "최종 빌런", skillDesc: "매 턴 무작위 스킬 복사", passive: "도자기", isHidden: true }
+];
+
+const PASSIVE_LIST = [
+    { id: "atk_up", name: "공증", rarity: "common", desc: "공격력 +10", weight: 60 },
+    { id: "def_up", name: "방증", rarity: "common", desc: "방어력 +10", weight: 60 },
+    { id: "hp_up", name: "체증", rarity: "common", desc: "최대 HP +20", weight: 60 },
+    { id: "tenacity", name: "근성", rarity: "common", desc: "최대 HP +30", weight: 60 },
+    { id: "iron_wall", name: "철벽", rarity: "common", desc: "방어력 +15", weight: 60 },
+    { id: "hard_hit", name: "세게 때리기", rarity: "common", desc: "콤보 시 데미지 +10", weight: 60 },
+    { id: "not_my_business", name: "내 알빠야?", rarity: "rare", desc: "재굴림 시 10% 확률로 재굴림 +1", weight: 25 },
+    { id: "good_profit", name: "개이득ㅋㅋ", rarity: "rare", desc: "콤보 배수 +0.5", weight: 25 },
+    { id: "gambler", name: "승부사", rarity: "rare", desc: "스트레이트 이상 족보 피해 +10", weight: 25 },
+    { id: "unyielding", name: "불굴", rarity: "rare", desc: "HP 30% 이하일 때 방어력 +20", weight: 25 },
+    { id: "lucky_dice", name: "행운의 주사위", rarity: "rare", desc: "전투 시작 시 주사위 1개를 조커 주사위로 변경", weight: 25 },
+    { id: "vampire", name: "흡혈", rarity: "rare", desc: "가한 피해의 10% 회복", weight: 25 },
+    { id: "rage", name: "분노", rarity: "legendary", desc: "턴 종료 후 20% 확률 추가 턴", weight: 10 },
+    { id: "super_rage", name: "존나 분노", rarity: "legendary", desc: "사망 시 1회 부활 (최대 HP 50%)", weight: 10 },
+    { id: "yacht_blessing", name: "도박사의 축복", rarity: "legendary", desc: "야추 피해 +100%", weight: 10 },
+    { id: "dice_rig", name: "주사위 조작", rarity: "legendary", desc: "재굴림 시 잠금한 주사위가 나올 확률 증가", weight: 10 },
+    { id: "time_warp", name: "시간 왜곡", rarity: "legendary", desc: "전투 시작 후 3턴 동안 재굴림 +2", weight: 10 },
+    { id: "fate_dice", name: "운명의 주사위", rarity: "legendary", desc: "전투당 1회 주사위 하나를 원하는 숫자로 변경", weight: 10 },
+    { id: "berserker", name: "광전사", rarity: "legendary", desc: "HP 50% 이하일 때 공격력 +50, 방어력 -10", weight: 10 },
+    { id: "protagonist", name: "주인공", rarity: "mythic", desc: "모든 스탯 +20", weight: 5 },
+    { id: "cheat_key", name: "치트키", rarity: "mythic", desc: "모든 족보 피해 +50%", weight: 5 },
+    { id: "infinite_rage", name: "무한한 분노", rarity: "mythic", desc: "턴 종료 후 추가 턴 확률 50%", weight: 5 },
+    { id: "god_luck", name: "운빨좆망겜", rarity: "mythic", desc: "턴 시작 시 20% 확률로 즉시 야추 완성", weight: 5 }
+];
+
+let gameState = {
+    currentBossIndex: 0, playerHP: 100, bossHP: 0, dice: [1, 1, 1, 1, 1],
+    locked: [false, false, false, false, false], permLocked: [false, false, false, false, false],
+    rerollsLeft: 2, battleTurns: 0, isPlayerTurn: true, isProcessing: false, isBattleEnded: false,
+    bossDice: [], hasUsedDojagi: false, unlockedCount: 1, defeatedNames: [], hiddenBossUnlocked: false,
+    playerStats: { attack: 0, defense: 0, hpLevel: 0, statPoints: 0, totalSPEarned: 0 },
+    currentHardMode: false, hardModeResetDone: false, bossRewardCounts: {}, playerState: "normal",
+    rerollsUsedThisTurn: 0, hasNacciUsedThisTurn: false, lastHandName: null, comboCount: 1,
+    currentPassive: null,
+    hasUsedFateDice: false,
+    hasUsedSuperRage: false,
+    isJokerPassiveActive: false,
+    isComboAttack: false 
+};
+
+function generatePassiveChoices() {
+    const choices = []; const pool = [...PASSIVE_LIST];
+    while (choices.length < 3) {
+        const totalWeight = pool.reduce((sum, p) => sum + p.weight, 0);
+        let rand = Math.random() * totalWeight;
+        for (let i = 0; i < pool.length; i++) {
+            rand -= pool[i].weight;
+            if (rand <= 0) { choices.push(pool[i]); pool.splice(i, 1); break; }
+        }
+    }
+    return choices;
+}
+
+function showPassiveSelection() {
+    const choices = generatePassiveChoices(); const container = document.getElementById('passive-choices-container');
+    container.innerHTML = '';
+    choices.forEach(p => {
+        const card = document.createElement('div'); card.className = `passive-card ${p.rarity}`;
+        card.innerHTML = `<span class="rarity-tag ${p.rarity}">${p.rarity}</span><div style="font-weight: 900; font-size: 1.2rem; margin-bottom: 5px;">${p.name}</div><div style="font-size: 0.9rem; color: var(--text-dim);">${p.desc}</div>`;
+        card.onclick = () => selectPassive(p); container.appendChild(card);
+    });
+    document.getElementById('passive-select-overlay').style.display = 'flex';
+}
+
+function selectPassive(passive) { 
+    gameState.currentPassive = passive; 
+    document.getElementById('passive-select-overlay').style.display = 'none'; 
+    completeBattleStart(); 
+}
+
+/**
+ * Surrender System
+ */
+function confirmSurrender() {
+    if (gameState.isBattleEnded) return;
+    document.getElementById('surrender-overlay').style.display = 'flex';
+}
+
+function closeSurrender() {
+    document.getElementById('surrender-overlay').style.display = 'none';
+}
+
+function surrender() {
+    gameState.isBattleEnded = true;
+    closeSurrender();
+    addLog("호숙은 전투를 포기했다.", "system");
+    
+    setTimeout(() => {
+        resetBattleState();
+        showBossSelect();
+    }, 1000);
+}
+
+function showCurrentPassive() {
+    if (!gameState.currentPassive) return; const p = gameState.currentPassive;
+    document.getElementById('current-passive-name').innerText = p.name; document.getElementById('current-passive-rarity').innerText = p.rarity;
+    document.getElementById('current-passive-rarity').className = `rarity-tag ${p.rarity}`; document.getElementById('current-passive-desc').innerText = p.desc;
+    document.getElementById('passive-info-overlay').style.display = 'flex';
+}
+function closePassiveInfo() { document.getElementById('passive-info-overlay').style.display = 'none'; }
+
+function showGameGuide() { document.getElementById('guide-overlay').style.display = 'flex'; }
+function closeGameGuide() { document.getElementById('guide-overlay').style.display = 'none'; }
+
+function showFloatingDamage(target, amount) {
+    const el = document.createElement('div'); el.className = 'floating-damage'; el.innerText = `-${amount}`;
+    const panel = document.getElementById(target === 'boss' ? 'boss-panel' : 'player-panel');
+    const rect = panel.getBoundingClientRect(); el.style.left = `${rect.left + rect.width / 2}px`; el.style.top = `${rect.top}px`;
+    document.body.appendChild(el); setTimeout(() => el.remove(), 800);
+}
+
+function showHandBanner(text) {
+    const banner = document.getElementById('hand-banner'); banner.innerText = text; banner.style.display = 'block';
+    setTimeout(() => { banner.style.display = 'none'; }, 1000);
+}
+
+async function animateDiceRoll(isPlayer) {
+    AudioManager.play('dice'); 
+    const diceArea = document.getElementById('dice-area'); const dieElements = diceArea.querySelectorAll('.die-card:not(.perm-locked):not(.locked)');
+    if (dieElements.length === 0) return;
+    for (let i = 0; i < 10; i++) {
+        dieElements.forEach(el => { const rand = Math.floor(Math.random() * 6) + 1; el.innerText = CONFIG.DICE_FACES[rand]; el.classList.add('rolling'); });
+        await sleep(60);
+    }
+    dieElements.forEach(el => el.classList.remove('rolling'));
+}
+
+function calculateMaxHP() {
+    let base = CONFIG.PLAYER_MAX_HP + (gameState.playerStats.hpLevel * 10); const p = gameState.currentPassive;
+    if (p) { if (p.id === "hp_up") base += 20; if (p.id === "tenacity") base += 30; if (p.id === "protagonist") base += 20; }
+    return base;
+}
+
+function saveProgress() {
+    const data = {
+        unlockedCount: gameState.unlockedCount, defeatedNames: gameState.defeatedNames, playerStats: gameState.playerStats,
+        hiddenBossUnlocked: gameState.hiddenBossUnlocked, hardModeResetDone: gameState.hardModeResetDone, bossRewardCounts: gameState.bossRewardCounts
+    };
+    localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(data));
+}
+
+function loadProgress() {
+    try {
+        const saved = localStorage.getItem(CONFIG.SAVE_KEY);
+        if (saved) {
+            const data = JSON.parse(saved); gameState.unlockedCount = data.unlockedCount || 1; gameState.defeatedNames = data.defeatedNames || [];
+            gameState.playerStats = data.playerStats || gameState.playerStats; gameState.hiddenBossUnlocked = data.hiddenBossUnlocked || false;
+            gameState.hardModeResetDone = data.hardModeResetDone || false; gameState.bossRewardCounts = data.bossRewardCounts || {};
+        }
+    } catch(e) {}
+    if (gameState.defeatedNames.includes("춘식")) {
+        const container = document.getElementById('hard-mode-toggle-container');
+        if (container) container.style.display = 'block';
+    }
+    showBossSelect();
+}
+
+function toggleHardMode() {
+    gameState.currentHardMode = document.getElementById('hard-mode-checkbox').checked;
+    if (gameState.currentHardMode && !gameState.hardModeResetDone) {
+        if (confirm("하드 모드 첫 진입 시 모든 스탯이 초기화됩니다. 계속하시겠습니까?")) {
+            gameState.playerStats.attack = 0; gameState.playerStats.defense = 0; gameState.playerStats.hpLevel = 0;
+            gameState.playerStats.statPoints = 0; gameState.playerStats.totalSPEarned = 0; gameState.hardModeResetDone = true;
+            saveProgress(); renderBossSelect();
+        } else { document.getElementById('hard-mode-checkbox').checked = false; gameState.currentHardMode = false; }
+    }
+}
+
+function confirmReset() { if (confirm("데이터를 초기화하시겠습니까?")) { localStorage.removeItem(CONFIG.SAVE_KEY); location.reload(); } }
+function upgradeStat(type) { if (gameState.playerStats.statPoints <= 0) return; gameState.playerStats.statPoints--; gameState.playerStats[type]++; saveProgress(); renderBossSelect(); }
+
+function renderBossSelect() {
+    const grid = document.getElementById('boss-grid'); grid.innerHTML = '';
+    document.getElementById('stat-atk').innerText = gameState.playerStats.attack;
+    document.getElementById('stat-def').innerText = gameState.playerStats.defense;
+    document.getElementById('stat-hp').innerText = gameState.playerStats.hpLevel;
+    document.getElementById('stat-hp-val').innerText = calculateMaxHP();
+    document.getElementById('stat-sp').innerText = gameState.playerStats.statPoints;
+    document.getElementById('stat-total-sp').innerText = gameState.playerStats.totalSPEarned;
+    document.getElementById('player-lv-sum').innerText = gameState.playerStats.attack + gameState.playerStats.defense + gameState.playerStats.hpLevel;
+    for (let i = 0; i < 6; i++) {
+        const boss = BOSS_DATA[i]; const isUnlocked = i < gameState.unlockedCount; const isDefeated = gameState.defeatedNames.includes(boss.name);
+        const card = document.createElement('div'); card.className = `boss-card ${isDefeated ? 'defeated' : (isUnlocked ? 'unlocked' : 'locked')}`;
+        card.innerHTML = `${isDefeated ? '<div class="badge">🏆</div>' : ''}<div style="font-size: 1.5rem; margin-bottom: 5px;">${isUnlocked ? '' : '🔒'}</div><div class="boss-name-text" style="font-weight: 800; font-size: 1.1rem;">${boss.name}</div>${isUnlocked ? `<button class="btn btn-ghost" style="font-size: 0.65rem; padding: 4px 8px; margin-top: 8px; border-color: rgba(255,255,255,0.2);" onclick="event.stopPropagation(); showSkillInfo(${i})">스킬 보기</button>` : ''}`;
+        if (isUnlocked) card.onclick = () => startBossFight(i); grid.appendChild(card);
+    }
+    if (gameState.hiddenBossUnlocked) {
+        const boss = BOSS_DATA[6]; const isDefeated = gameState.defeatedNames.includes(boss.name);
+        const card = document.createElement('div'); card.className = `boss-card unlocked hidden-boss ${isDefeated ? 'defeated' : ''}`;
+        card.innerHTML = `<div style="font-size: 1.5rem;">${isDefeated ? '🏆' : '😈'}</div><div class="boss-name-text" style="font-weight: 900; font-size: 1.3rem;">👑 최종 빌런 춘식</div>`;
+        card.onclick = () => startBossFight(6); grid.appendChild(card);
+    }
+}
+
+function loadAndSelect() { loadProgress(); }
+
+/**
+ * Scene Management System
+ */
+function switchScene(sceneId) {
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active', 'show', 'visible');
+    });
+    
+    // Aggressive Overlay Cleanup (FIX: Retry Bug)
+    document.querySelectorAll('.overlay').forEach(o => {
+        o.style.display = 'none';
+        o.classList.remove('active', 'show', 'visible');
+    });
+    
+    document.querySelectorAll('.floating-damage').forEach(el => el.remove());
+    
+    const target = document.getElementById(sceneId);
+    if (target) {
+        target.classList.add('active');
+        if (target.classList.contains('overlay')) target.style.display = 'flex';
+    }
+}
+
+function resetBattleState() {
+    gameState.playerHP = calculateMaxHP(); gameState.bossHP = 0; gameState.battleTurns = 0; gameState.isPlayerTurn = true;
+    gameState.isProcessing = false; gameState.isBattleEnded = false; gameState.hasUsedDojagi = false;
+    gameState.rerollsUsedThisTurn = 0; gameState.hasNacciUsedThisTurn = false; gameState.lastHandName = null;
+    gameState.comboCount = 1; gameState.locked = [false, false, false, false, false]; gameState.permLocked = [false, false, false, false, false];
+    gameState.currentPassive = null; gameState.hasUsedFateDice = false; gameState.hasUsedSuperRage = false; gameState.isJokerPassiveActive = false;
+    clearLog();
+}
+
+function startBossFight(index) {
+    resetBattleState(); gameState.currentBossIndex = index; const boss = BOSS_DATA[index];
+    gameState.bossHP = boss.hp; gameState.currentBossMaxHP = boss.hp;
+    if (boss.skill === "목줄") { const rand = Math.floor(Math.random() * 5); gameState.permLocked[rand] = true; }
+    showPassiveSelection();
+}
+
+function completeBattleStart() {
+    const index = gameState.currentBossIndex; const p = gameState.currentPassive;
+    if (p) { if (p.id === "lucky_dice") { gameState.isJokerPassiveActive = true; addLog("행운의 주사위 적용!"); } gameState.playerHP = calculateMaxHP(); }
+    switchScene('battle-screen'); loadBossUI(index);
+}
+
+function loadBossUI(index) {
+    const boss = BOSS_DATA[index]; document.getElementById('boss-name').innerText = boss.name;
+    document.getElementById('stage-info').innerText = boss.isHidden ? "FINAL STAGE" : `Stage ${index + 1}/6`;
+    const display = document.getElementById('boss-skill-display'); display.innerText = boss.skill;
+    display.style.cursor = 'pointer'; display.onclick = () => showSkillInfo(index);
+    updateHPBar('boss', gameState.bossHP, gameState.currentBossMaxHP); updateHPBar('player', gameState.playerHP, calculateMaxHP());
+    
+    // (FIX) Premature Popup Removed
+    
+    document.getElementById('modal-stage-num').innerText = boss.isHidden ? "FINAL CHALLENGE" : `STAGE ${index + 1}`;
+    document.getElementById('modal-boss-name').innerText = boss.name;
+    document.getElementById('modal-boss-skill-name').innerText = boss.skill;
+    document.getElementById('modal-boss-quote').innerText = `"${boss.intro}"`;
+    document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeBossModal() { 
+    // Official Battle Start (RULE 5)
+    document.getElementById('modal-overlay').style.display = 'none'; 
+    
+    const boss = BOSS_DATA[gameState.currentBossIndex];
+    const passives = ["목줄", "노예", "수학 마스터", "자신감"];
+    if (passives.includes(boss.skill)) {
+        showSkillPopup(boss.skill, "boss");
+    }
+    
+    startPlayerTurn(); 
+}
+
+function retryBoss() { 
+    // Aggressive Modal Cleanup (FIX: Retry Bug)
+    document.querySelectorAll('.overlay').forEach(o => {
+        o.style.display = 'none';
+        o.classList.remove('active', 'show', 'visible');
+    });
+    startBossFight(gameState.currentBossIndex); 
+}
+
+async function startPlayerTurn() {
+    if (gameState.isBattleEnded) return; gameState.isPlayerTurn = true; gameState.isProcessing = false;
+    const p = gameState.currentPassive; let extra = 0; if (p && p.id === "time_warp" && gameState.battleTurns < 3) extra = 2;
+    gameState.rerollsLeft = 2 + extra; gameState.locked = [false, false, false, false, false];
+    gameState.rerollsUsedThisTurn = 0; gameState.hasNacciUsedThisTurn = false;
+    await animateDiceRoll(true);
+    if (p && p.id === "god_luck" && Math.random() < 0.2) { showSkillPopup("운빨좆망겜", "player"); gameState.dice = [6, 6, 6, 6, 6]; addLog("운빨좆망겜 발동!"); }
+    else rollDice();
+    renderDice(); updateUI(); addLog("호숙의 턴!", "system");
+}
+
+function rollDice() { for (let i = 0; i < 5; i++) if (!gameState.locked[i] && !gameState.permLocked[i]) gameState.dice[i] = Math.floor(Math.random() * 6) + 1; }
+function useSkill() {
+    if (!gameState.isPlayerTurn || gameState.isProcessing || gameState.isBattleEnded || gameState.hasNacciUsedThisTurn || gameState.rerollsUsedThisTurn < 1) return;
+    gameState.rerollsLeft++; gameState.hasNacciUsedThisTurn = true; showSkillPopup("낫씨다이스", "player"); addLog("내가 낸 주사위를 못봤다."); updateUI();
+}
+
+async function playerReroll() {
+    if (!gameState.isPlayerTurn || gameState.rerollsLeft <= 0 || gameState.isProcessing || gameState.isBattleEnded) return;
+    gameState.isProcessing = true; const p = gameState.currentPassive;
+    if (p && p.id === "not_my_business" && Math.random() < 0.1) gameState.rerollsLeft++;
+    if (p && p.id === "dice_rig") showSkillPopup("조작", "player");
+    gameState.rerollsLeft--; gameState.rerollsUsedThisTurn++; await animateDiceRoll(true);
+    if (p && p.id === "dice_rig") {
+        const lockedVals = gameState.dice.filter((_, i) => gameState.locked[i] || gameState.permLocked[i]);
+        if (lockedVals.length > 0) {
+            for (let i = 0; i < 5; i++) if (!gameState.locked[i] && !gameState.permLocked[i]) gameState.dice[i] = Math.random() < 0.5 ? lockedVals[Math.floor(Math.random() * lockedVals.length)] : Math.floor(Math.random() * 6) + 1;
+        } else rollDice();
+    } else rollDice();
+    renderDice(); gameState.isProcessing = false; updateUI(); addLog(`재굴림... (남은 기회: ${gameState.rerollsLeft})`);
+}
+
+function renderDice() {
+    const area = document.getElementById('dice-area'); area.innerHTML = '';
+    const dice = gameState.isPlayerTurn ? gameState.dice : gameState.bossDice;
+    const boss = BOSS_DATA[gameState.currentBossIndex]; const p = gameState.currentPassive;
+    let isJoker = false; if (!gameState.isPlayerTurn && (boss.skill === "자신감" || (boss.name === "춘식" && document.getElementById('boss-skill-display').innerText.includes("자신감")))) isJoker = true;
+    if (gameState.isPlayerTurn && gameState.isJokerPassiveActive) isJoker = true;
+
+    dice.forEach((val, idx) => {
+        const die = document.createElement('div'); const isPerm = gameState.isPlayerTurn && gameState.permLocked[idx];
+        const isL = gameState.isPlayerTurn && gameState.locked[idx]; const isJ = isJoker && idx === 0;
+        die.className = `die-card ${isPerm ? 'perm-locked' : (isL ? 'locked' : '')} ${isJ ? 'joker' : ''}`;
+        die.innerText = isJ ? "?" : CONFIG.DICE_FACES[val];
+        if (isL || isPerm) { const b = document.createElement('div'); b.className = 'lock-badge'; b.innerText = isPerm ? '⛓️' : '🔒'; die.appendChild(b); }
+        die.onclick = () => {
+            if (gameState.isPlayerTurn && !gameState.isProcessing && !gameState.permLocked[idx] && !gameState.isBattleEnded) {
+                if (p && p.id === "fate_dice" && !gameState.hasUsedFateDice) {
+                    const v = parseInt(prompt("1-6:", "6")); if (v >= 1 && v <= 6) { gameState.dice[idx] = v; gameState.hasUsedFateDice = true; showSkillPopup("운명의 주사위", "player"); renderDice(); return; }
+                }
+                gameState.locked[idx] = !gameState.locked[idx]; renderDice();
+            }
+        };
+        area.appendChild(die);
+    });
+}
+
+function updateUI() {
+    document.getElementById('reroll-text').innerText = `REROLL ${gameState.rerollsLeft} Left`;
+    document.getElementById('btn-reroll').disabled = (gameState.rerollsLeft <= 0 || !gameState.isPlayerTurn || gameState.isProcessing || gameState.isBattleEnded);
+    document.getElementById('btn-attack').disabled = (!gameState.isPlayerTurn || gameState.isProcessing || gameState.isBattleEnded);
+    const canS = gameState.rerollsUsedThisTurn >= 1 && !gameState.hasNacciUsedThisTurn;
+    document.getElementById('btn-skill').disabled = (!canS || !gameState.isPlayerTurn || gameState.isProcessing || gameState.isBattleEnded);
+}
+
+function evaluateHand(dice, hasJoker = false) {
+    if (hasJoker) {
+        let best = { name: "없음", damage: 0 };
+        for (let j = 1; j <= 6; j++) { let temp = [...dice]; temp[0] = j; let cur = evaluateHandBase(temp); if (cur.damage > best.damage) best = cur; }
+        return best;
+    }
+    return evaluateHandBase(dice);
+}
+
+function evaluateHandBase(dice) {
+    const counts = {}; dice.forEach(d => counts[d] = (counts[d] || 0) + 1);
+    const v = Object.values(counts).sort((a, b) => b - a); const u = Object.keys(counts).map(Number).sort((a, b) => a - b);
+    if (v[0] >= 5) return { name: "야추", damage: 50 };
+    if (v[0] >= 4) return { name: "포카드", damage: 35 };
+    if ((v[0] === 3 && v[1] >= 2) || (v[0] >= 3 && v[1] >= 3)) return { name: "풀하우스", damage: 25 };
+    let c = 1, m = 1; for (let i = 0; i < u.length - 1; i++) { if (u[i+1] === u[i] + 1) { c++; m = Math.max(m, c); } else c = 1; }
+    if (m >= 5) return { name: "스트레이트", damage: 20 };
+    if (v[0] >= 3) return { name: "트리플", damage: 15 };
+    if (v[0] >= 2 && v[1] >= 2) return { name: "투페어", damage: 10 };
+    if (v[0] >= 2) return { name: "원페어", damage: 5 };
+    return { name: "없음", damage: 0 };
+}
+
+function getComboMultiplier(count) {
+    if (count <= 1) return 1.0;
+    const table = { 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0, 6: 4.0, 7: 5.0, 8: 6.0, 9: 7.0 };
+    return table[count] || 10.0;
+}
+
+async function playerAttack() {
+    if (!gameState.isPlayerTurn || gameState.isProcessing || gameState.isBattleEnded) return;
+    gameState.isProcessing = true; gameState.battleTurns++; updateUI();
+    const p = gameState.currentPassive; const hand = evaluateHand(gameState.dice, gameState.isJokerPassiveActive);
+    if (gameState.lastHandName === hand.name && hand.name !== "없음") gameState.comboCount++; else gameState.comboCount = 1;
+    gameState.lastHandName = hand.name;
+    
+    if (gameState.comboCount > 1) {
+        gameState.isComboAttack = true;
+        AudioManager.play('combo');
+    } else {
+        gameState.isComboAttack = false;
+    }
+
+    let hD = hand.damage; if (p && p.id === "yacht_blessing" && hand.name === "야추") hD *= 2;
+    if (p && p.id === "gambler" && ["야추", "포카드", "풀하우스", "스트레이트"].includes(hand.name)) hD += 10;
+    if (p && p.id === "cheat_key") hD = Math.floor(hD * 1.5);
+    let aB = gameState.playerStats.attack;
+    if (p) { if (p.id === "atk_up") aB += 10; if (p.id === "protagonist") aB += 20; if (p.id === "berserker" && (gameState.playerHP/calculateMaxHP()) <= 0.5) aB += 50; }
+    let cM = getComboMultiplier(gameState.comboCount); if (p && p.id === "good_profit" && gameState.comboCount > 1) cM += 0.5;
+    let bS = (hD + aB) * cM; if (p && p.id === "hard_hit" && gameState.comboCount > 1) bS += 10;
+    let sM = 1.0; if (gameState.playerState === "각성") sM = 1.5; if (gameState.playerState === "좌절") sM = 0.5;
+    let fD = Math.floor(bS * sM);
+    const cT = gameState.comboCount > 1 ? ` (COMBO x${cM.toFixed(1)})` : "";
+    showHandBanner(hand.name + cT + "!"); await sleep(1000);
+    if (fD > 0) {
+        addLog(`호숙의 공격! [${hand.name}]${cT} (+${aB})`, "player"); await applyDamage('boss', fD);
+        if (p && p.id === "vampire") {
+            const h = Math.floor(fD * 0.1); if (h > 0) { gameState.playerHP = Math.min(calculateMaxHP(), gameState.playerHP + h); updateHPBar('player', gameState.playerHP, calculateMaxHP()); addLog(`흡혈: HP ${h} 회복!`); }
+        }
+    } else addLog("공격 실패...");
+    
+    gameState.isComboAttack = false; 
+    if (gameState.isBattleEnded) return;
+    let eT = 0; if (p && p.id === "rage") eT = 0.2; if (p && p.id === "infinite_rage") eT = 0.5;
+    if (Math.random() < eT) { showSkillPopup(p.name, "player"); addLog(`${p.name} 발동!`); setTimeout(startPlayerTurn, 800); } else setTimeout(bossTurn, 800);
+}
+
+async function bossTurn() {
+    if (gameState.isBattleEnded) return; gameState.isPlayerTurn = false; updateUI();
+    const boss = BOSS_DATA[gameState.currentBossIndex]; addLog(`${boss.name}의 턴!`, "boss");
+    let dc = 5, mr = 2, hj = false; let curS = boss.skill;
+    if (boss.name === "춘식") {
+        const s = ["목줄", "노예", "흑염룡", "수학 마스터", "자신감", "만취"]; curS = s[Math.floor(Math.random() * s.length)];
+        document.getElementById('boss-skill-display').innerText = curS; if (curS !== "흑염룡") showSkillPopup(curS, "boss");
+        if (curS === "목줄") { const r = Math.floor(Math.random() * 5); gameState.permLocked[r] = true; }
+    } 
+    if (curS === "노예") { dc = 6; mr = 1; } if (curS === "수학 마스터") mr = 3; if (curS === "자신감") hj = true;
+    gameState.bossDice = Array(dc).fill(0).map(() => Math.floor(Math.random() * 6) + 1); renderDice();
+    for (let r = 0; r < mr; r++) {
+        if (gameState.isBattleEnded) return; await animateDiceRoll(false);
+        const counts = {}; gameState.bossDice.forEach(d => counts[d] = (counts[d] || 0) + 1);
+        let bn = 0, mc = 0; for(const n in counts) { if(counts[n] > mc) { mc = counts[n]; bn = parseInt(n); } }
+        if (boss.name === "온숙" && mc === 2 && Math.random() < 0.5) mc = 0; 
+        let bl = (mc >= 2) ? gameState.bossDice.map(d => d === bn) : Array(dc).fill(false);
+        for(let i=0; i<dc; i++) if(!bl[i]) gameState.bossDice[i] = Math.floor(Math.random()*6)+1;
+        renderDice(); await sleep(500);
+    }
+    if (gameState.isBattleEnded) return;
+    if (curS === "흑염룡") {
+        let sum = gameState.bossDice.reduce((a,b) => a+b, 0); let isM = gameState.currentHardMode ? (sum >= 15 && sum <= 17) : (sum === 16);
+        if (isM) { showSkillPopup("흑염룡!!", "boss"); showHandBanner("흑염룡!!"); await sleep(1000); gameState.playerHP = 0; updateHPBar('player', 0, calculateMaxHP()); if (checkBattleEnd()) return; }
+    }
+    const h = evaluateHand(gameState.bossDice, hj); showHandBanner(h.name + "!"); await sleep(1000);
+    if (h.damage > 0) {
+        let pD = gameState.playerStats.defense; const p = gameState.currentPassive;
+        if (p) { if (p.id === "def_up") pD += 10; if (p.id === "iron_wall") pD += 15; if (p.id === "protagonist") pD += 20; if (p.id === "unyielding" && (gameState.playerHP/calculateMaxHP()) <= 0.3) pD += 20; if (p.id === "berserker" && (gameState.playerHP/calculateMaxHP()) <= 0.5) pD -= 10; }
+        const fBD = Math.max(0, h.damage - pD); addLog(`${boss.name}의 [${h.name}]! (방어 -${pD})`); await applyDamage('player', fBD);
+    } else addLog(`${boss.name}의 공격 빗나감!`);
+    if (gameState.isBattleEnded) return;
+    if (curS.includes("만취") && Math.random() < 0.3) { showSkillPopup("만취!!", "boss"); setTimeout(bossTurn, 800); } else startPlayerTurn();
+}
+
+async function applyDamage(target, amount) {
+    if (gameState.isBattleEnded) return; let fA = amount; const p = gameState.currentPassive;
+    if (target === 'boss' && BOSS_DATA[gameState.currentBossIndex].name === "쵸숙") fA = Math.floor(amount * 0.7);
+    if (fA > 0 && !gameState.isComboAttack) {
+        AudioManager.play('attack');
+    }
+    document.getElementById(target === 'boss' ? 'boss-panel' : 'player-panel').classList.add('shake');
+    setTimeout(() => document.getElementById(target === 'boss' ? 'boss-panel' : 'player-panel').classList.remove('shake'), 500);
+    showFloatingDamage(target, fA);
+    if (target === 'boss') {
+        const boss = BOSS_DATA[gameState.currentBossIndex]; let nH = gameState.bossHP - fA;
+        if (nH <= 0 && boss.passive === "도자기" && !gameState.hasUsedDojagi) { nH = 1; gameState.hasUsedDojagi = true; showSkillPopup("도자기", "boss"); }
+        gameState.bossHP = Math.max(0, nH); updateHPBar('boss', gameState.bossHP, gameState.currentBossMaxHP);
+    } else {
+        let nH = gameState.playerHP - fA;
+        if (nH <= 0 && p && p.id === "super_rage" && !gameState.hasUsedSuperRage) { nH = Math.floor(calculateMaxHP() * 0.5); gameState.hasUsedSuperRage = true; showSkillPopup("존나 분노", "player"); }
+        gameState.playerHP = Math.max(0, nH); updateHPBar('player', gameState.playerHP, calculateMaxHP());
+    }
+    if (checkBattleEnd()) return; await sleep(600);
+}
+
+function checkBattleEnd() {
+    if (gameState.isBattleEnded) return true;
+    if (gameState.playerHP <= 0) { gameState.isBattleEnded = true; document.getElementById('defeat-overlay').style.display = 'flex'; return true; }
+    else if (gameState.bossHP <= 0) { gameState.isBattleEnded = true; handleVictory(); return true; }
+    return false;
+}
+
+function handleVictory() {
+    const boss = BOSS_DATA[gameState.currentBossIndex]; const isFirst = !gameState.defeatedNames.includes(boss.name);
+    let reward = ""; let canR = false;
+    if (gameState.currentHardMode) { const c = gameState.bossRewardCounts[boss.name] || 0; if (c < 3) { gameState.bossRewardCounts[boss.name] = c + 1; canR = true; } }
+    else if (isFirst) canR = true;
+    if (canR) { gameState.playerStats.statPoints += 5; gameState.playerStats.totalSPEarned += 5; reward = " (+5 SP 획득!)"; }
+    if (isFirst) {
+        gameState.defeatedNames.push(boss.name); if (boss.name === "꽃숙") gameState.hiddenBossUnlocked = true;
+        if (boss.name === "춘식") { switchScene('true-end-overlay'); return; }
+        if (gameState.currentBossIndex + 1 === gameState.unlockedCount && gameState.unlockedCount < 6) gameState.unlockedCount++;
+    }
+    saveProgress(); document.getElementById('victory-msg').innerText = `${boss.name} 제압 성공!${reward}`;
+    document.getElementById('victory-stats').innerText = `Turns: ${gameState.battleTurns}`; document.getElementById('victory-overlay').style.display = 'flex';
+}
+
+const BOSS_VISUAL_THEMES = {
+    "얀식": { class: "skill-yansik", effect: "effect-vignette" }, "맛자": { class: "skill-matja", effect: "effect-flash-multi" },
+    "늬숙": { class: "skill-nysuk", effect: "effect-freeze" }, "온숙": { class: "skill-onsuk", effect: "effect-pulse-shield" },
+    "쵸숙": { class: "skill-chosuk", effect: "effect-metallic" }, "꽃숙": { class: "skill-kkotsuk", effect: "effect-wobble" },
+    "춘식": { class: "skill-hard", effect: "effect-vignette" }
+};
+
+function showSkillPopup(name, type = "player", context = null) {
+    AudioManager.play('skill'); 
+    const el = document.createElement('div'); const isH = gameState.currentHardMode; const eL = document.getElementById('screen-effect-layer');
+    let tC = type; let eC = "";
+    if (type === "boss" || context) {
+        const bN = context || (BOSS_DATA[gameState.currentBossIndex] ? BOSS_DATA[gameState.currentBossIndex].name : null);
+        const theme = BOSS_VISUAL_THEMES[bN]; if (theme) { tC = theme.class; eC = theme.effect; }
+    }
+    el.className = `skill-popup ${tC} ${isH ? 'hard' : ''}`; el.innerText = `[ ${name} ]`; document.body.appendChild(el);
+    if (eC && eL) { eL.className = eC; setTimeout(() => { if (eL.className === eC) eL.className = ""; }, 1500); }
+    setTimeout(() => el.remove(), 1200);
+}
+
+function updateHPBar(t, c, m) {
+    const f = document.getElementById(`${t}-hp-fill`); const x = document.getElementById(`${t}-hp-text`);
+    const p = Math.max(0, (c / m) * 100); f.style.width = `${p}%`; f.classList.toggle('danger', p < 30); x.innerText = `${Math.max(0, c)} / ${m}`;
+}
+
+function addLog(msg, type = "") {
+    const c = document.getElementById('log-container'); const el = document.createElement('div');
+    el.className = `log-entry ${type} new`; el.innerText = `> ${msg}`; c.prepend(el);
+    setTimeout(() => el.classList.remove('new'), 2000); while (c.childNodes.length > CONFIG.MAX_LOGS) c.removeChild(c.lastChild);
+}
+
+function resetStats() {
+    if (document.getElementById('battle-screen').classList.contains('active')) { alert("전투 중 불가"); return; }
+    if (confirm("초기화?")) {
+        const s = gameState.playerStats.attack + gameState.playerStats.defense + gameState.playerStats.hpLevel;
+        gameState.playerStats.statPoints += s; gameState.playerStats.attack = 0; gameState.playerStats.defense = 0; gameState.playerStats.hpLevel = 0;
+        saveProgress(); renderBossSelect();
+    }
+}
+
+function showSkillInfo(index) {
+    const b = BOSS_DATA[index]; document.getElementById('skill-info-title').innerText = b.skill; document.getElementById('skill-info-desc').innerText = b.skillDesc;
+    const h = document.getElementById('skill-info-hard'); if (gameState.currentHardMode && b.hardSkillDesc) { h.style.display = 'block'; document.getElementById('skill-info-hard-desc').innerText = b.hardSkillDesc; } else h.style.display = 'none';
+    document.getElementById('skill-info-overlay').style.display = 'flex';
+}
+function closeSkillInfo() { document.getElementById('skill-info-overlay').style.display = 'none'; }
+function clearLog() { document.getElementById('log-container').innerHTML = ''; }
+
+function retryBoss() { 
+    // Aggressive Modal Cleanup (FIX: Retry Bug)
+    document.querySelectorAll('.overlay').forEach(o => {
+        o.style.display = 'none';
+        o.classList.remove('active', 'show', 'visible');
+    });
+    startBossFight(gameState.currentBossIndex); 
+}
+
+function showScreen(id) { switchScene(id); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function showBossSelect() { switchScene('boss-select-screen'); renderBossSelect(); }
+
+window.onload = () => {
+    AudioManager.init();
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.btn')) {
+            AudioManager.play('click');
+        }
+    });
+};
+</script>
+</body>
+</html>
